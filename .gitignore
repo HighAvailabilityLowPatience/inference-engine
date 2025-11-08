@@ -11,8 +11,8 @@ __pycache__/
 .idea/
 .vscode/
 
-# SQLite DBs
-*.db
+# Ignore only database files, not the folder
+db/*.db
 
 # Docker artifacts
 *.log
