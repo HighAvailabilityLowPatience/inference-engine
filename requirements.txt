@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+transformers
+torch
+prometheus-client
+sqlite-utils
+requests
+pip

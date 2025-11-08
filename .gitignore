@@ -1,0 +1,18 @@
+# Python / virtual environments
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# OS / IDE stuff
+.DS_Store
+.env
+.idea/
+.vscode/
+
+# SQLite DBs
+*.db
+
+# Docker artifacts
+*.log
