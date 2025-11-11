@@ -1,0 +1,6 @@
+requests
+psutil
+ping3
+speedtest-cli
+aiohttp
+prometheus-client
