@@ -2,6 +2,9 @@
 venv/
 .venv/
 __pycache__/
+env/
+env*/        # in case someone names it weird
+python_env/
 *.pyc
 *.pyo
 
