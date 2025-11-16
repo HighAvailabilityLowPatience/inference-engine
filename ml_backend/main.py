@@ -70,6 +70,24 @@ def metrics_endpoint():
 
 @app.get("/health")
 def health_check():
+    """
+    Simple API health check.
+    - Confirms app is running
+    - Optionally checks DB connectivity
+    """
     REQUEST_COUNT.labels("/health").inc()
+    try:
+        # Cheap DB check. Adjust based on your db_utils implementation.
+        db_utils.health_check(DB_PATH)  # If you don't have this, see comment below.
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DB error: {e}")
+@app.get("/node-health")
+def node_health():
+    """
+    Returns network/node diagnostics / flags for the UI.
+    Uses your existing network.test_latency_and_throughput().
+    """
+    REQUEST_COUNT.labels("/node-health").inc()
     health_data = network.test_latency_and_throughput()
     return health_data
