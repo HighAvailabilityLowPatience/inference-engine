@@ -44,6 +44,23 @@ def real_predict(text: str):
     }
 
 
+# ⚡⚡⚡ CHANGED: TELEMETRY → NATURAL LANGUAGE CONVERSION
+# --------------------------------------------------------
+def telemetry_to_text(t: Dict) -> str:
+    """Convert numeric telemetry into readable natural language for BERT."""
+    if not t:
+        return "No telemetry provided."
+
+    return (
+        f"System report: CPU usage {t.get('cpu')} percent, "
+        f"memory usage {t.get('mem')} percent, "
+        f"network sent {t.get('net_sent')} bytes, "
+        f"network received {t.get('net_recv')} bytes, "
+        f"ping latency {t.get('ping_ms')} milliseconds."
+    )
+# --------------------------------------------------------
+
+
 # ------------------------------
 # PROMETHEUS METRICS
 # ------------------------------
@@ -75,15 +92,19 @@ def predict(payload: InputPayload):
     REQUEST_COUNT.labels("/predict").inc()
 
     try:
-        if USE_FAKE:
-            result = fake_sentiment_predict(payload.input)
-        else:
-            result = real_predict(payload.input)
+        # ⚡⚡⚡ CHANGED: Use TELEMETRY to generate model input
+        telemetry_text = telemetry_to_text(payload.telemetry)
 
-        # Store event + telemetry
+        # ⚡⚡⚡ CHANGED: Feed telemetry text into model
+        if USE_FAKE:
+            result = fake_sentiment_predict(telemetry_text)
+        else:
+            result = real_predict(telemetry_text)
+
+        # ⚡⚡⚡ CHANGED: Store telemetry_text instead of dummy .input
         db_utils.log_event(
             DB_PATH,
-            payload.input,
+            telemetry_text,   # now logging the actual processed text
             result,
             telemetry=payload.telemetry
         )
