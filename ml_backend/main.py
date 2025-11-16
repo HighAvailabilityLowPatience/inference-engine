@@ -4,26 +4,52 @@ from typing import Optional, Dict
 from transformers import pipeline
 from prometheus_client import Counter, Histogram, generate_latest
 import time
+import os
+
 from utils import db_utils, network
 
 app = FastAPI(title="Telemetry Inference API")
 
 # ------------------------------
-# MODEL LOADING (unchanged)
+# MODEL LOADING (REAL + OPTIONAL FAKE MODE)
 # ------------------------------
+USE_FAKE = os.getenv("USE_FAKE", "false").lower() == "true"
+
+MODEL_PATH = "model/distilbert-base-uncased-finetuned-sst-2-english"
+
+classifier = None
+if not USE_FAKE:
+    try:
+        classifier = pipeline("sentiment-analysis", model=MODEL_PATH)
+        print(f"[MODEL] Loaded real model from: {MODEL_PATH}")
+    except Exception as e:
+        print(f"[MODEL ERROR] Failed to load real model: {e}")
+        USE_FAKE = True
+        print("[MODEL] Falling back to fake inference mode.")
+
+
 def fake_sentiment_predict(text: str):
-    """Lightweight stub until model works again."""
-    # simple stupid rules just so API returns something
+    """Simple stub model when USE_FAKE=true or real model fails."""
     if any(w in text.lower() for w in ["fail", "down", "error"]):
         return {"label": "NEGATIVE", "score": 0.9}
     return {"label": "POSITIVE", "score": 0.9}
 
 
+def real_predict(text: str):
+    """Run inference through HuggingFace pipeline."""
+    result = classifier(text)[0]  # HF returns list
+    return {
+        "label": result["label"],
+        "score": float(result["score"])
+    }
+
+
 # ------------------------------
-# METRICS
+# PROMETHEUS METRICS
 # ------------------------------
 REQUEST_COUNT = Counter("api_requests_total", "Total requests", ["endpoint"])
 REQUEST_LATENCY = Histogram("api_request_latency_seconds", "Latency", ["endpoint"])
+
 
 # ------------------------------
 # DATABASE
@@ -31,8 +57,9 @@ REQUEST_LATENCY = Histogram("api_request_latency_seconds", "Latency", ["endpoint
 DB_PATH = "db/events.db"
 db_utils.init_db(DB_PATH)
 
+
 # ------------------------------
-# INPUT PAYLOAD — NOW WITH TELEMETRY
+# INPUT PAYLOAD
 # ------------------------------
 class InputPayload(BaseModel):
     input: str
@@ -40,7 +67,7 @@ class InputPayload(BaseModel):
 
 
 # ------------------------------
-# /PREDICT — sentiment + telemetry logging
+# /PREDICT
 # ------------------------------
 @app.post("/predict")
 def predict(payload: InputPayload):
@@ -48,17 +75,20 @@ def predict(payload: InputPayload):
     REQUEST_COUNT.labels("/predict").inc()
 
     try:
-        # Run sentiment inference
-       result = fake_sentiment_predict(payload.input)
+        if USE_FAKE:
+            result = fake_sentiment_predict(payload.input)
+        else:
+            result = real_predict(payload.input)
 
         # Store event + telemetry
         db_utils.log_event(
             DB_PATH,
             payload.input,
             result,
-            telemetry=payload.telemetry  # <— NEW
+            telemetry=payload.telemetry
         )
 
+        # API response
         response = {
             "sentiment": result["label"],
             "confidence": round(result["score"], 4),
@@ -75,7 +105,7 @@ def predict(payload: InputPayload):
 
 
 # ------------------------------
-# /events — unchanged
+# /events
 # ------------------------------
 @app.get("/events")
 def get_events(limit: int = 10):
@@ -84,7 +114,7 @@ def get_events(limit: int = 10):
 
 
 # ------------------------------
-# /aggregate — unchanged
+# /aggregate
 # ------------------------------
 @app.get("/aggregate")
 def aggregate_sentiment():
@@ -93,7 +123,7 @@ def aggregate_sentiment():
 
 
 # ------------------------------
-# /control — unchanged
+# /control
 # ------------------------------
 @app.post("/control")
 def control(action: str):
@@ -107,7 +137,7 @@ def control(action: str):
 
 
 # ------------------------------
-# /metrics — unchanged
+# /metrics
 # ------------------------------
 @app.get("/metrics")
 def metrics_endpoint():
@@ -115,13 +145,12 @@ def metrics_endpoint():
 
 
 # ------------------------------
-# /health — SIMPLE API CHECK
+# /health
 # ------------------------------
 @app.get("/health")
 def health_check():
     REQUEST_COUNT.labels("/health").inc()
     try:
-        # Cheap DB check — if you don’t have this, replace with a no-op.
         db_utils.health_check(DB_PATH)
         return {"status": "ok"}
     except Exception as e:
@@ -129,7 +158,7 @@ def health_check():
 
 
 # ------------------------------
-# /node-health — YOUR NETWORK FLAGS FOR UI
+# /node-health
 # ------------------------------
 @app.get("/node-health")
 def node_health():
