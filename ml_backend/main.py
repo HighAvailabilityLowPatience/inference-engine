@@ -68,7 +68,8 @@ def control(action: str):
 def metrics_endpoint():
     return generate_latest()
 
-@app.get("/system_health")
-def system_health():
-    return {"status": "ok"}
-
+@app.get("/health")
+def health_check():
+    REQUEST_COUNT.labels("/health").inc()
+    health_data = network.test_latency_and_throughput()
+    return health_data
