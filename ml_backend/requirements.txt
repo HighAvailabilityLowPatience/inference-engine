@@ -1,8 +1,20 @@
+# Lightweight CPU-only ML + API stack
+
+# --- Core API ---
 fastapi
 uvicorn
+
+# --- ML Inference (CPU optimized) ---
+torch==2.2.2+cpu
+-f https://download.pytorch.org/whl/cpu
 transformers
-torch
-prometheus-client
-sqlite-utils
+
+# --- Utilities ---
 requests
-pip
+psutil
+
+# --- Storage ---
+sqlite-utils
+
+# --- Monitoring ---
+prometheus-client
