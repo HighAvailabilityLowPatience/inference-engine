@@ -5,8 +5,8 @@ fastapi
 uvicorn
 
 # --- ML Inference (CPU optimized) ---
-torch==2.2.2+cpu
--f https://download.pytorch.org/whl/cpu
+# Torch will be installed separately as CPU-only
+torch
 transformers
 
 # --- Utilities ---
