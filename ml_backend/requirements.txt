@@ -1,20 +1,7 @@
-# Lightweight CPU-only ML + API stack
-
-# --- Core API ---
 fastapi
 uvicorn
-
-# --- ML Inference (CPU optimized) ---
-# Torch will be installed separately as CPU-only
-torch
-transformers
-
-# --- Utilities ---
-requests
-psutil
-
-# --- Storage ---
-sqlite-utils
-
-# --- Monitoring ---
 prometheus-client
+sqlite-utils
+requests
+httpx
+numpy
