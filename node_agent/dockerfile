@@ -1,28 +1,28 @@
-# ==========================================
-# Node Agent Dockerfile (Mode Aware + Module Safe)
-# ==========================================
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy requirements first for caching
+# Copy requirement files first
 COPY corerequirements.txt extendedrequirements.txt ./
 
-# Install base (core) requirements
+# Install core Python dependencies
 RUN pip install --no-cache-dir -r corerequirements.txt
 
-# Copy source code into container
-COPY . .
+# Create a proper module directory inside the container
+RUN mkdir -p /app/node_agent
 
-# Explicitly set Python path so /app is recognized as the package root
+# Copy source code INTO the node_agent module folder
+COPY . /app/node_agent
+
+# Ensure `/app` is recognized as a package root
 ENV PYTHONPATH=/app
 
-# Set mode (core or extended)
+# Default mode
 ENV MODE=core
 
-# Conditional install and module-based run
+# Launch the agent properly
 CMD if [ "$MODE" = "extended" ]; then \
-        pip install --no-cache-dir -r extendedrequirements.txt && \
+        pip install --no-cache-dir -r /app/node_agent/extendedrequirements.txt && \
         python -m node_agent.agent; \
     else \
         python -m node_agent.agent; \

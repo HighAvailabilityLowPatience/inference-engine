@@ -3,9 +3,10 @@ import psutil
 import time
 import json
 from datetime import datetime
-from utils.network_utils import get_node_id, ping_latency
+from node_agent.utils.network_utils import get_node_id, ping_latency
 
-CONFIG_PATH = "config.json"
+import os
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 
 def load_config():
     with open(CONFIG_PATH, "r") as f:

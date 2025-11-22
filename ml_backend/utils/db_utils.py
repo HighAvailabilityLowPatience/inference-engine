@@ -44,3 +44,13 @@ def aggregate_sentiment(db_path):
     rows = cur.fetchall()
     conn.close()
     return [{"sentiment": r[0], "avg_confidence": r[1], "count": r[2]} for r in rows]
+
+def health_check(db_path):
+    try:
+        conn = sqlite3.connect(db_path)
+        conn.execute("SELECT 1")
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"[DB HEALTH ERROR] {e}")
+        return False

@@ -13,31 +13,33 @@ app = FastAPI(title="Telemetry Inference API")
 # ------------------------------
 # MODEL LOADING (REAL + OPTIONAL FAKE MODE)
 # ------------------------------
-USE_FAKE = os.getenv("USE_FAKE", "false").lower() == "true"
 
-MODEL_PATH = "model/distilbert-base-uncased-finetuned-sst-2-english"
+USE_FAKE = False
+MODEL_PATH = "distilbert-base-uncased-finetuned-sst-2-english"
 
 classifier = None
-if not USE_FAKE:
-    try:
-        classifier = pipeline("sentiment-analysis", model=MODEL_PATH)
-        print(f"[MODEL] Loaded real model from: {MODEL_PATH}")
-    except Exception as e:
-        print(f"[MODEL ERROR] Failed to load real model: {e}")
-        USE_FAKE = True
-        print("[MODEL] Falling back to fake inference mode.")
+
+try:
+    # Try to load HF model directly from the hub
+    classifier = pipeline("sentiment-analysis", model=MODEL_PATH)
+    print(f"[MODEL] Loaded HuggingFace model: {MODEL_PATH}")
+
+except Exception as e:
+    print(f"[MODEL ERROR] Could not load HF model: {e}")
+    print("[MODEL] Falling back to FAKE MODE.")
+    USE_FAKE = True
 
 
 def fake_sentiment_predict(text: str):
-    """Simple stub model when USE_FAKE=true or real model fails."""
+    """Simple fallback model."""
     if any(w in text.lower() for w in ["fail", "down", "error"]):
-        return {"label": "NEGATIVE", "score": 0.9}
-    return {"label": "POSITIVE", "score": 0.9}
+        return {"label": "NEGATIVE", "score": 0.91}
+    return {"label": "POSITIVE", "score": 0.88}
 
 
 def real_predict(text: str):
-    """Run inference through HuggingFace pipeline."""
-    result = classifier(text)[0]  # HF returns list
+    """Run model if available."""
+    result = classifier(text)[0]
     return {
         "label": result["label"],
         "score": float(result["score"])

@@ -1,12 +1,23 @@
 import socket
-from ping3 import ping
+import time
+import uuid
+
 
 def get_node_id():
-    return socket.gethostname()
+    return str(uuid.getnode())
 
-def ping_latency(host="8.8.8.8"):
+
+def ping_latency(host, port=53, timeout=1):
+    """
+    Fast, non-root, non-ICMP TCP ping.
+    Works reliably on EC2 without sudo.
+    """
+    start = time.time()
     try:
-        latency = ping(host, timeout=1)
-        return round(latency * 1000, 2) if latency else None
-    except Exception:
+        socket.setdefaulttimeout(timeout)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, port))
+        sock.close()
+        return round((time.time() - start) * 1000, 2)
+    except:
         return None
