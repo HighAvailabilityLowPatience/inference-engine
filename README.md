@@ -104,25 +104,12 @@ Each service runs manually.
 
 This is a demo, not a reliable monitoring product.
 
- 4. How To Run the Demo
-Backend
-docker run -d -p 8000:8000 ghcr.io/highavailabilitylowpatience/ml-backend:latest
-
-Node Agent
-docker run -d ghcr.io/highavailabilitylowpatience/node-agent:latest
-
-UI
-
-Inside telemetry-watch/:
-
-npm install
-echo "VITE_API_URL=http://<backend-ip>:8000" > .env
-npm run dev
 
 
-Now open:
 
-http://localhost:5173
+
+
+
 
 🧩 5. How To Continue Development
 
@@ -130,13 +117,11 @@ If someone wants to expand this project, they should:
 
 Future Steps:
 
-Add docker-compose for 1-command stack
 
 Add retry logic to node_agent POST requests
 
 Improve telemetry parsing and model fallback
 
-Connect UI to live data (fetch calls)
 
 Add Grafana dashboards
 
@@ -170,7 +155,7 @@ Logging + monitoring
 
 Multi-service debugging
 
-This project exceeded its original scope, and now serves as a full working demo suitable for DevOps interviews, portfolio work, and future expansion.
+This project exceeded its original scope, and now serves as a full working demo 
 
 🏁 7. Status: Frozen as Working Demo
 
