@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  backend:
+    container_name: ml_backend
+    image: ghcr.io/highavailabilitylowpatience/ml-backend:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - USE_FAKE=false
+    restart: unless-stopped
+
+  ui:
+    container_name: telemetry_ui
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # UI will call backend via http://localhost:8000
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  node_agent:
+    container_name: node_agent
+    image: ghcr.io/highavailabilitylowpatience/node-agent:latest
+    environment:
+      - MODE=core
+    volumes:
+      - ./inference-engine/node_agent/config.json:/app/node_agent/config.json
+    depends_on:
+      - backend
+    restart: unless-stopped
