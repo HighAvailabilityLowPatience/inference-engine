@@ -23,14 +23,3 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-  node_agent:
-    container_name: node_agent
-    image: ghcr.io/highavailabilitylowpatience/node-agent:latest
-    environment:
-      - MODE=core
-    volumes:
-      - ./inference-engine/node_agent/config.json:/app/node_agent/config.json
-    depends_on:
-      - backend
-    restart: unless-stopped
