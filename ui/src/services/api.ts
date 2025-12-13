@@ -67,4 +67,4 @@ export const apiService = {
  * (Optional) also export the individual functions,
  * in case any code relies on direct imports.
  */
-export { predict, health };
+export { predict, health, quickSentiment };
