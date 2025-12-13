@@ -60,6 +60,7 @@ async function quickSentiment(text: string) {
 export const apiService = {
   predict,
   health,
+  quickSentiment,
 };
 
 /**
