@@ -1,29 +1,38 @@
- README 
-Telemetry Inference Platform (Prototype Demo)
+1. Architecture Overview
 
-A lightweight distributed monitoring + ML inference system built as a DevOps learning project.
-This project includes three components:
+The system has three logical components:
 
- 1. Components
+[ Node Agent(s) ]  --->  [ FastAPI ML Backend ]  --->  [ Web UI ]
+        (distributed)            (central)              (viewer)
+
+Components
 A) FastAPI ML Backend (ml_backend/)
 
-Loads a HuggingFace sentiment model
+Loads a HuggingFace sentiment model (CPU-only)
 
-Receives telemetry + natural language input
+Receives:
+
+Natural language input
+
+Structured telemetry from node agents
 
 Converts telemetry → readable text
 
-Runs inference (real or fallback mode)
+Runs inference (real model or safe fallback)
 
-Provides /predict and /health endpoints
+Exposes:
 
-Logs events and metrics
+POST /predict
 
-Runs inside Docker with CPU-only PyTorch
+GET /health
+
+Runs fully inside Docker
+
+Published as a reusable GHCR container
 
 B) Node Agent (node_agent/)
 
-Runs as a lightweight Python agent
+Lightweight Python telemetry agent
 
 Collects:
 
@@ -37,130 +46,149 @@ Ping latency
 
 Node ID
 
-Sends telemetry to the backend every X seconds
+Sends telemetry to the backend at a fixed interval
 
-Minimal configuration through a simple config.json
+Designed to run on any node in your network
 
-Distributed design (multiple nodes can run simultaneously)
+Configuration via a single config.json file
 
-Runs as a Docker container
+Can be:
+
+Built from source
+
+Pulled directly as a prebuilt GHCR container
+
+⚠️ Important:
+Node agents are not meant to be tightly coupled to the backend or UI. They are intentionally distributed.
 
 C) Web UI (telemetry-watch/)
 
-React/Vite interface (generated via Lovable)
+React + Vite frontend (generated via Lovable)
 
-Displays backend health
+Displays:
 
-Displays model outputs
+Backend health
 
-Designed to eventually visualize:
+Inference results
 
-Node performance
+Talks to the backend via HTTP
 
-Model predictions
+Backend URL is injected via environment variable:
 
-System state
-
-Connects via environment variable:
-VITE_API_URL=http://<backend-ip>:8000
-
- 2. What Works Today
-✔ Backend loads and runs with real HuggingFace model
-✔ Backend exposes /predict and /health
-✔ Backend logs metrics + converts telemetry → natural language
-✔ Node Agent builds and runs in Docker
-✔ Node Agent sends HTTP POSTs to backend
-✔ GHCR containers published and reusable anywhere
-✔ Disposable EC2 Dev Environment (AMI) working
-✔ UI repo exists and can connect via VITE_API_URL
-✔ Entire system builds and runs end-to-end
-⚠️ 3. Known Issues / Broken Parts
-
-These are expected for a prototype and do not prevent demo use.
-
-❌ /predict throws 500 errors in some cases
-
-Likely due to:
-
-malformed telemetry
-
-missing fields
-
-occasional empty pipeline outputs
-
-❌ Agent does not handle backend failures gracefully
-
-No retry/backoff logic (future enhancement).
-
-❌ UI not fully connected to backend yet
-
-Needs fetch calls wired to /predict and /health.
-
-❌ No docker-compose file yet
-
-Each service runs manually.
-
-❌ Not production-ready
-
-This is a demo, not a reliable monitoring product.
+VITE_API_URL=http://<backend-host>:8000
 
 
+Can run:
+
+In Docker
+
+Or standalone for development
+
+2. How to Deploy (Corrected)
+Backend + UI (Central Node)
+
+Clone the repo:
+
+git clone https://github.com/HighAvailabilityLowPatience/inference-engine.git
+cd inference-engine
 
 
+Build and run the backend (Docker):
+
+docker build -t ml-backend ./ml_backend
+docker run -d -p 8000:8000 ml-backend
 
 
+ Run the UI:
+
+ via Docker
+
+Node Agent (Any Node in Your Network)
+
+Pull the node agent:
+
+git clone https://github.com/HighAvailabilityLowPatience/inference-engine.git
+cd inference-engine/node_agent
 
 
-🧩 5. How To Continue Development
+Edit config.json:
 
-If someone wants to expand this project, they should:
-
-Future Steps:
-
-
-Add retry logic to node_agent POST requests
-
-Improve telemetry parsing and model fallback
+{
+  "node_name": "node-01",
+  "api_url": "http://<backend-ip>:8000",
+  "interval": 30
+}
 
 
-Add Grafana dashboards
+Run it:
 
-Add InfluxDB or TimescaleDB for historical telemetry
+Either directly with Python
 
-Add WebSocket streaming for real-time updates
+Or as a Docker container
 
-Switch model to a lighter CPU-friendly variant
+That’s it.
+No docker-compose required. No service mesh. No magic.
 
-Add tests + CI/CD
+3. What Works Today (MVP)
 
-Convert to microservices with proper observability
+✔ Backend loads and runs (real HuggingFace model or fallback)
+✔ /health endpoint works reliably
+✔ /predict accepts telemetry + text
+✔ Node Agent builds and sends telemetry
+✔ Multiple agents supported
+✔ Containers published to GHCR
+✔ UI renders and can connect when pointed correctly
 
-🌙 6. Purpose of This Project
+This qualifies as a working demo.
 
-This system was built as a DevOps learning project to practice:
+4. Known Issues / Limitations 
 
-Dockerization
+These are expected and documented:
 
-Container registries
+❌ /predict may return 500 errors with malformed payloads
 
-EC2 deployment
+❌ Node agent lacks retry/backoff logic
 
-Distributed architecture
+❌ UI does not yet handle API failures gracefully
 
-HuggingFace model integration
+❌ No auth, rate limiting, or persistence guarantees
 
-Backend + agent patterns
+❌ Not production-ready by design
 
-Logging + monitoring
+None of these invalidate the demo.
 
-Multi-service debugging
+5. What This  Project Demonstrates:
 
-This project exceeded its original scope, and now serves as a full working demo 
+This project demonstrates:
 
-🏁 7. Status: Frozen as Working Demo
+Systems Architecture and Understanding
 
-This project is intentionally paused after reaching a stable demo state.
-Further development is optional and not required for learning progression.
+Docker image authoring (multiple services)
 
-**Tech Stack:** FastAPI · Python · Docker · Hugging Face · PyTorch (CPU-only) · SQLite · Prometheus · Grafana · GitHub Codespaces  
-**Author:** Emmanuel Johnson
+GHCR container publishing
+
+Distributed agent design
+
+Backend ↔ agent communication
+
+ML model integration
+
+Debugging real container networking issues
+
+EC2 provisioning + AMI reuse
+
+*Knowing when to stop building
+
+That last one matters.
+
+6. Status
+
+Frozen as a Working MVP Demo
+
+This project intentionally stopped after achieving its learning goals.
+Further work is optional.
+
+Tech Stack:
+FastAPI · Python · Docker · Hugging Face · PyTorch (CPU-only) · React · Vite · GitHub Container Registry
+
+Author: Emmanuel Johnson
